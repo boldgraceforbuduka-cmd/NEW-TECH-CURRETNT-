@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { Navbar } from '@/components/ui/Navbar';
 import { Footer } from '@/components/ui/Footer';
 
+export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Tech Current — Stay Ahead. Stay Current.',
   description: 'The latest technology news, AI breakthroughs, programming tutorials, and startup stories.',
