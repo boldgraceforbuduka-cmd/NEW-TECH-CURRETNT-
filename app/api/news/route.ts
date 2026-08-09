@@ -6,7 +6,7 @@ export const revalidate = 60;
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 // ============================================================
-// 1. LARGE POOL OF UNIQUE PARAGRAPHS (real-sounding stories)
+// 1. STORY PARAGRAPH POOL
 // ============================================================
 const openings = [
   'In a significant development, the technology sector has witnessed a shift that could reshape the industry.',
@@ -64,7 +64,6 @@ const quotes = [
   'A spokesperson added: "We are committed to transparency and ethical practices in all our operations."',
 ];
 
-// Combine all paragraphs into one pool with categories
 const allParagraphs = [
   ...openings,
   ...backgrounds,
@@ -75,20 +74,18 @@ const allParagraphs = [
   ...quotes,
 ];
 
-// Build a story by selecting 6-8 different paragraphs
+// ------------------------------------------------------------
 function buildStory(): string {
   const count = rand(6, 8);
   const usedIndices = new Set<number>();
   const selected: string[] = [];
 
-  // Ensure at least one from each category (except quotes/details)
   const categories = [openings, backgrounds, analyses, impacts, conclusions];
   for (const cat of categories) {
     const idx = rand(0, cat.length - 1);
     selected.push(cat[idx]);
   }
 
-  // Fill remaining with random from all pool
   while (selected.length < count) {
     let idx;
     do {
@@ -98,7 +95,6 @@ function buildStory(): string {
     selected.push(allParagraphs[idx]);
   }
 
-  // Shuffle to give a natural flow
   for (let i = selected.length - 1; i > 0; i--) {
     const j = rand(0, i);
     [selected[i], selected[j]] = [selected[j], selected[i]];
@@ -107,10 +103,53 @@ function buildStory(): string {
   return selected.map(p => `<p>${p}</p>`).join('');
 }
 
-// ------------------------------------------------------------
-// Generate a single article with rich content
-// ------------------------------------------------------------
-function generateArticle(index: number) {
+// ============================================================
+// 2. UNSPLASH IMAGE POOL
+// ============================================================
+const FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80',
+  'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80',
+  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
+  'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80',
+];
+
+let unsplashImages: string[] | null = null;
+
+async function getUnsplashImages(): Promise<string[]> {
+  if (unsplashImages && unsplashImages.length > 0) return unsplashImages;
+
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (!accessKey) {
+    console.warn('UNSPLASH_ACCESS_KEY is missing. Using fallback images.');
+    return FALLBACK_IMAGES;
+  }
+
+  try {
+    const response = await fetch(
+      'https://api.unsplash.com/search/photos?query=technology&per_page=30&orientation=landscape',
+      {
+        headers: { Authorization: `Client-ID ${accessKey}` },
+        next: { revalidate: 3600 },
+      }
+    );
+    if (!response.ok) throw new Error(`Unsplash API returned ${response.status}`);
+    const data = await response.json();
+    const images = data.results?.map((photo: any) => photo?.urls?.regular).filter(Boolean);
+    if (images?.length) {
+      unsplashImages = images;
+      return images;
+    }
+    return FALLBACK_IMAGES;
+  } catch (error) {
+    console.error('Unsplash image fetch failed:', error);
+    return FALLBACK_IMAGES;
+  }
+}
+
+// ============================================================
+// 3. GENERATE ARTICLE
+// ============================================================
+function generateArticle(index: number, images: string[]) {
   const categories = [
     'ai', 'programming', 'cybersecurity', 'startups', 'general',
     'breaking', 'latest', 'trending', 'ai-tools', 'ai-models', 'ai-research', 'ai-explained',
@@ -146,13 +185,10 @@ function generateArticle(index: number) {
   ];
   const title = titles[rand(0, titles.length - 1)];
 
-  // Generate full story
   const content = buildStory();
-  // Extract a short description (first 160 chars of plain text)
   const plainText = content.replace(/<[^>]*>?/gm, '');
   const description = plainText.slice(0, 160) + '...';
 
-  // Dynamic tags based on category
   const categoryTags: Record<string, string[]> = {
     'ai': ['AI', 'Machine Learning', 'Deep Learning'],
     'programming': ['Coding', 'Software', 'DevOps'],
@@ -183,7 +219,7 @@ function generateArticle(index: number) {
     title,
     description,
     content,
-    image_url: `https://picsum.photos/seed/${index}/800/400`,
+    image_url: images[(index - 1) % images.length],
     source: ['Tech Current', 'Reuters', 'TechCrunch', 'Wired', 'Ars Technica'][rand(0, 4)],
     author: ['Buduka Oyagiri', 'AI Team', 'Dev Team', 'Security Team', 'Startup Editor'][rand(0, 4)],
     published_at: new Date(Date.now() - rand(0, 30) * 3600000).toISOString(),
@@ -196,9 +232,9 @@ function generateArticle(index: number) {
   };
 }
 
-// ------------------------------------------------------------
-// Caching and API Route
-// ------------------------------------------------------------
+// ============================================================
+// 4. CACHING & API ROUTE
+// ============================================================
 let cachedArticles: any[] | null = null;
 
 export async function GET(request: Request) {
@@ -209,8 +245,9 @@ export async function GET(request: Request) {
 
   if (!cachedArticles) {
     cachedArticles = [];
+    const images = await getUnsplashImages();
     for (let i = 1; i <= 5000; i++) {
-      cachedArticles.push(generateArticle(i));
+      cachedArticles.push(generateArticle(i, images));
     }
   }
 
@@ -247,12 +284,10 @@ export async function GET(request: Request) {
   if (category && category !== 'general' && category !== 'all') {
     const parent = subCategoryMap[category];
     let filtered = articles.filter(a => a.category === category);
-
     if (filtered.length < 10 && parent) {
       const parentArticles = articles.filter(a => a.category === parent);
       filtered = [...filtered, ...parentArticles];
     }
-
     if (filtered.length > 0) {
       articles = filtered;
     }

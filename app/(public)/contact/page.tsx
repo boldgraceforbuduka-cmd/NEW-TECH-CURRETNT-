@@ -22,7 +22,7 @@ export default function ContactPage() {
     <div className="container mx-auto px-4 py-20 max-w-2xl">
       <h1 className="text-4xl font-heading font-bold mb-6">Contact Us</h1>
       <p className="text-muted-foreground mb-8">
-        We'd love to hear from you. Reach out via email or social media.
+        We&apos;d love to hear from you. Reach out via email or social media.
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input

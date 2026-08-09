@@ -108,7 +108,7 @@ export default function ArticlePage() {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <h1 className="text-4xl font-heading font-bold mb-4">Article Not Found</h1>
-        <p className="text-muted-foreground">The article you're looking for doesn't exist.</p>
+        <p className="text-muted-foreground">The article you&apos;re looking for doesn&apos;t exist.</p>
         <p className="text-sm text-muted-foreground mt-2">Slug: {params.slug}</p>
         <Link href="/news" className="inline-block mt-6 px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition">
           Back to News
@@ -213,7 +213,7 @@ export default function ArticlePage() {
         </span>
         {article.is_pinned && (
           <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-gold text-background">
-            ★ Editor's Pick
+            ★ Editor&apos;s Pick
           </span>
         )}
       </div>

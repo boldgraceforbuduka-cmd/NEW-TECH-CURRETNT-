@@ -30,7 +30,7 @@ export default function IntelligencePage() {
         <h1 className="text-4xl font-heading font-bold">Tech Current Intelligence</h1>
       </div>
       <p className="text-muted-foreground text-lg mb-8 max-w-2xl">
-        What happened. Why it matters. Who is affected. What's next.
+        What happened. Why it matters. Who is affected. What&apos;s next.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[

@@ -47,7 +47,7 @@ export default function AboutPage() {
 
         <h2 className="text-2xl font-heading font-bold mt-8 mb-4">Our Vision</h2>
         <p className="text-muted-foreground">
-          To become Africa's most trusted technology media platform.
+          To become Africa&apos;s most trusted technology media platform.
         </p>
       </div>
     </div>

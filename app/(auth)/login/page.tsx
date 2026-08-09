@@ -34,7 +34,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-heading font-bold">Welcome back</h1>
           <p className="text-sm text-muted-foreground mt-1">Sign in to your Tech Current account</p>
         </div>
-        
+
         {errorMsg && (
           <div className="p-3 text-sm bg-destructive/10 text-destructive rounded-lg border border-destructive/20 text-center">
             {errorMsg}
@@ -68,7 +68,7 @@ export default function LoginPage() {
         </Button>
 
         <p className="text-sm text-muted-foreground text-center pt-2">
-          Don't have an account? <Link href="/register" className="text-primary font-medium hover:underline">Sign up</Link>
+          Don&apos;t have an account? <Link href="/register" className="text-primary font-medium hover:underline">Sign up</Link>
         </p>
       </form>
     </div>

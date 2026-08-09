@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArticleGrid } from '@/components/ui/ArticleGrid';
 import { fetchArticles } from '@/lib/api/client';
@@ -25,7 +25,7 @@ function NewsContent() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  const loadArticles = async (pageNum = 1, reset = true) => {
+  const loadArticles = useCallback(async (pageNum = 1, reset = true) => {
     setLoading(true);
     try {
       const data = await fetchArticles({ category, limit: 20, page: pageNum });
@@ -40,12 +40,12 @@ function NewsContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [category]);
 
   useEffect(() => {
     setPage(1);
     loadArticles(1, true);
-  }, [category]);
+  }, [loadArticles]);
 
   const filtered = articles.filter((a) =>
     a.title?.toLowerCase().includes(search.toLowerCase()) ||

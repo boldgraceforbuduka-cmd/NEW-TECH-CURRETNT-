@@ -165,7 +165,7 @@ export default function NotificationsPage() {
         <div className="text-center py-16 bg-card border border-border rounded-2xl">
           <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-40" />
           <p className="text-lg font-medium">No notifications yet</p>
-          <p className="text-sm text-muted-foreground">We'll alert you when breaking news drops.</p>
+          <p className="text-sm text-muted-foreground">We&apos;ll alert you when breaking news drops.</p>
         </div>
       ) : (
         <div className="space-y-3">

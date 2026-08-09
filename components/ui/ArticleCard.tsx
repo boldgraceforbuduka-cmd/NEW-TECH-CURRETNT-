@@ -23,6 +23,7 @@ interface ArticleCardProps {
 
 export function ArticleCard({ article, variant = 'default' }: ArticleCardProps) {
   const [liked, setLiked] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const imgH = variant === 'compact' ? 'h-36' : 'h-48';
 
   const slug = generateSlug(article.title);
@@ -45,7 +46,7 @@ export function ArticleCard({ article, variant = 'default' }: ArticleCardProps) 
     >
       <Link href={`/news/${slug}`}>
         <div className={`relative ${imgH} bg-muted overflow-hidden`}>
-          {article.image_url ? (
+          {article.image_url && !imageError ? (
             <Image
               src={article.image_url}
               alt={article.title}
@@ -53,6 +54,7 @@ export function ArticleCard({ article, variant = 'default' }: ArticleCardProps) 
               loading="lazy"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-primary/10 to-gold/10">
