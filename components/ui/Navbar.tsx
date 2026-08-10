@@ -202,10 +202,11 @@ export function Navbar() {
         ${
           scrolled
             ? `
-              glass-nav
+              bg-background/80
+              backdrop-blur-xl
               border-b
-              border-[--glass-border]
-              shadow-[--glass-shadow]
+              border-border/40
+              shadow-sm
             `
             : `
               bg-transparent
@@ -214,13 +215,6 @@ export function Navbar() {
             `
         }
       `}
-      style={
-        {
-          '--glass-background': 'rgba(255,255,255,0.04)',
-          '--glass-border': 'rgba(255,255,255,0.08)',
-          '--glass-shadow': '0 8px 32px rgba(0,0,0,0.12)',
-        } as React.CSSProperties
-      }
     >
       {/* ===================================================
           MAIN NAVIGATION
