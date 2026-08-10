@@ -13,6 +13,7 @@ export async function middleware(req: NextRequest) {
     if (!session) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
+    // Check if user has admin role (stored in user metadata)
     const isAdmin = session.user.user_metadata?.role === 'admin';
     if (!isAdmin) {
       return NextResponse.redirect(new URL('/profile', req.url));

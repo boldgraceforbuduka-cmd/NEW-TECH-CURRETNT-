@@ -10,8 +10,8 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 60 * 1000,
       retry: 1,
-    }
-  }
+    },
+  },
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       orientation: 'vertical',
       smoothWheel: true,
     });
-
     function raf(time: number) {
       l.raf(time);
       requestAnimationFrame(raf);
@@ -34,7 +33,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+      <ThemeProvider
+        attribute="data-theme"  // ✅ uses data-theme on html
+        defaultTheme="dark"
+        enableSystem={true}
+        themes={['light', 'dark', 'nord', 'dracula', 'sepia']}
+        enableColorScheme={false} // disables automatic color-scheme meta tag
+      >
         {children}
       </ThemeProvider>
     </QueryClientProvider>

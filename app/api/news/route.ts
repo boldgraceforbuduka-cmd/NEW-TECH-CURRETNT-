@@ -6,7 +6,7 @@ export const revalidate = 60;
 const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 // ============================================================
-// 1. STORY PARAGRAPH POOL
+// 1. EXPANDED PARAGRAPH POOLS (same as yours)
 // ============================================================
 const openings = [
   'In a significant development, the technology sector has witnessed a shift that could reshape the industry.',
@@ -14,6 +14,11 @@ const openings = [
   'Tech giants are doubling down on their commitment to artificial intelligence, with new announcements coming daily.',
   'The startup ecosystem is buzzing with activity as venture capital flows into promising ventures.',
   'A new wave of cybersecurity threats has prompted urgent action from global regulators.',
+  'The convergence of AI and cloud computing is accelerating at an unprecedented pace.',
+  'Quantum computing is no longer a distant dream – it is becoming a reality.',
+  'The global chip shortage has exposed critical vulnerabilities in supply chains.',
+  'Sustainability is now a key driver of technology innovation.',
+  'The future of work is being reshaped by automation and remote collaboration.',
 ];
 
 const backgrounds = [
@@ -22,14 +27,24 @@ const backgrounds = [
   'With the rapid adoption of 5G, new use cases are emerging across sectors, from healthcare to manufacturing.',
   'Recent breakthroughs in quantum computing have opened up possibilities that were once considered science fiction.',
   'The global chip shortage has accelerated the need for domestic semiconductor production.',
+  'Investment in green tech has surged as climate concerns take centre stage.',
+  'The rise of open‑source software has democratised access to powerful tools.',
+  'Data privacy regulations are becoming stricter, forcing companies to adapt.',
+  'Edge computing is bringing processing power closer to the source of data.',
+  'The Internet of Things (IoT) is connecting billions of devices worldwide.',
 ];
 
 const analyses = [
-  'This move is likely to have far-reaching implications for competitors, who will need to adapt quickly.',
+  'This move is likely to have far‑reaching implications for competitors, who will need to adapt quickly.',
   'Analysts are forecasting that the new technology could generate billions in revenue within the next five years.',
   'However, challenges remain – including regulatory hurdles and the need for skilled talent.',
   'The company’s strategy appears to be focused on creating an ecosystem that locks in customers.',
   'There is also a growing emphasis on ethical AI, with companies investing heavily in responsible development.',
+  'The shift towards cloud‑native architectures is changing how software is built and deployed.',
+  'The adoption of AI in healthcare could revolutionise patient outcomes.',
+  'The rise of autonomous vehicles will reshape transportation and logistics.',
+  'Blockchain technology is finding use cases beyond cryptocurrencies.',
+  'The metaverse is evolving, but its full potential remains untapped.',
 ];
 
 const impacts = [
@@ -38,6 +53,11 @@ const impacts = [
   'The job market will see a shift, with demand for new skills rising while others become obsolete.',
   'Smaller players may find it harder to compete, potentially leading to consolidation in the industry.',
   'In developing regions, these technologies could leapfrog traditional infrastructure and drive economic growth.',
+  'The digital divide could widen unless access to technology is prioritised.',
+  'Remote work is becoming the new normal, with significant implications for real estate and urban planning.',
+  'Cybersecurity spending is projected to exceed $200 billion as threats become more sophisticated.',
+  'The rise of digital payments is transforming financial inclusion.',
+  'Tech education is crucial for bridging the skills gap in emerging economies.',
 ];
 
 const conclusions = [
@@ -46,6 +66,11 @@ const conclusions = [
   'Innovation will not slow down – it will accelerate, demanding adaptability from all stakeholders.',
   'The key takeaway is that staying informed is no longer optional; it is essential for survival in the digital age.',
   'Ultimately, the companies that prioritize user trust and transparency will emerge as the leaders of tomorrow.',
+  'The journey is just beginning, and the opportunities are boundless.',
+  'Collaboration between public and private sectors will be critical for success.',
+  'The future belongs to those who embrace change and continuously learn.',
+  'We are at the dawn of a new era of human‑machine collaboration.',
+  'The next generation of technology will be shaped by inclusivity and diversity.',
 ];
 
 const details = [
@@ -54,6 +79,11 @@ const details = [
   'The World Economic Forum predicts that automation will displace 85 million jobs but create 97 million new ones.',
   'Cloud spending reached over $500 billion last year, with no signs of slowing down.',
   'Cybersecurity spending is projected to exceed $200 billion as threats become more sophisticated.',
+  'The semiconductor market is expected to reach $1 trillion by 2030.',
+  'Global venture capital investment in tech startups hit a record $300 billion in 2025.',
+  'The number of IoT devices is expected to surpass 75 billion by 2030.',
+  '5G subscriptions are forecast to reach 4.5 billion by the end of 2027.',
+  'The global AI software market is projected to grow to $250 billion by 2028.',
 ];
 
 const quotes = [
@@ -62,6 +92,11 @@ const quotes = [
   'A leading analyst commented, "This is a game-changer that will redefine the competitive landscape."',
   'The company’s CTO stated, "Our goal is to make AI accessible to everyone, not just the tech elite."',
   'A spokesperson added: "We are committed to transparency and ethical practices in all our operations."',
+  'A prominent investor noted, "The biggest risk is not investing in technology fast enough."',
+  'A government official said, "We must ensure that innovation serves the public good."',
+  'A university researcher remarked, "The potential of quantum computing is truly mind‑boggling."',
+  'A developer community leader said, "Open source is the backbone of modern software."',
+  'A consumer advocate added, "We need to prioritise user privacy in every design decision."',
 ];
 
 const allParagraphs = [
@@ -74,16 +109,20 @@ const allParagraphs = [
   ...quotes,
 ];
 
-// ------------------------------------------------------------
-function buildStory(): string {
-  const count = rand(6, 8);
+// ============================================================
+// 2. GENERATE UNIQUE PARAGRAPHS (UNSHUFFLED)
+// ============================================================
+function generateParagraphs(): string[] {
+  const count = rand(80, 120);
   const usedIndices = new Set<number>();
   const selected: string[] = [];
 
   const categories = [openings, backgrounds, analyses, impacts, conclusions];
   for (const cat of categories) {
-    const idx = rand(0, cat.length - 1);
-    selected.push(cat[idx]);
+    for (let i = 0; i < 10; i++) {
+      const idx = rand(0, cat.length - 1);
+      selected.push(cat[idx]);
+    }
   }
 
   while (selected.length < count) {
@@ -95,22 +134,132 @@ function buildStory(): string {
     selected.push(allParagraphs[idx]);
   }
 
-  for (let i = selected.length - 1; i > 0; i--) {
-    const j = rand(0, i);
-    [selected[i], selected[j]] = [selected[j], selected[i]];
-  }
-
-  return selected.map(p => `<p>${p}</p>`).join('');
+  // ⚠️ DO NOT SHUFFLE HERE – we need the first paragraphs for the summary.
+  return selected;
 }
 
 // ============================================================
-// 2. UNSPLASH IMAGE POOL
+// 3. BUILD ARTICLE CONTENT WITH HEADINGS (NO IMAGES)
+// ============================================================
+const headingPool = [
+  'The Big Picture',
+  'Understanding the Context',
+  'Key Implications',
+  'What This Means for You',
+  'The Road Ahead',
+  'Challenges and Opportunities',
+  'Expert Perspectives',
+  'Real‑World Impact',
+  'The Future Outlook',
+  'A Closer Look',
+  'Why This Matters',
+  'What Experts Are Saying',
+  'The Bottom Line',
+  'Actionable Takeaways',
+  'Deep Dive',
+  'Analysis',
+  'Contextualizing the News',
+  'The Global View',
+  'Tech Industry Reaction',
+  'Consumer Impact',
+  'Regulatory Implications',
+  'Investment Landscape',
+  'Competitive Dynamics',
+  'Strategic Significance',
+];
+
+const subHeadingPool = [
+  'A Deeper Dive',
+  'Key Takeaways',
+  'Industry Impact',
+  'What’s Next',
+  'Expert Opinion',
+  'The Data Behind the News',
+  'The Human Element',
+  'Technology at Work',
+  'Global Trends',
+  'Local Perspectives',
+  'Innovation Spotlight',
+  'The Competitive Edge',
+  'The Human Factor',
+  'Market Reactions',
+  'Future Projections',
+  'Lessons Learned',
+];
+
+function buildArticleContent(paragraphs: string[]): string {
+  const result: string[] = [];
+  let headingIndex = 0;
+  let subHeadingIndex = 0;
+  let paragraphCounter = 0;
+  let subCounter = 0;
+  let nextHeadingAt = rand(15, 20);
+  let nextSubheadingAt = rand(8, 12);
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    result.push(`<p>${paragraphs[i]}</p>`);
+    paragraphCounter++;
+    subCounter++;
+
+    if (paragraphCounter >= nextHeadingAt && i < paragraphs.length - 5) {
+      const heading = headingPool[headingIndex % headingPool.length];
+      result.push(`<h2>${heading}</h2>`);
+      headingIndex++;
+      paragraphCounter = 0;
+      nextHeadingAt = rand(15, 20);
+    }
+
+    if (subCounter >= nextSubheadingAt && i < paragraphs.length - 5 && paragraphCounter > 5) {
+      const sub = subHeadingPool[subHeadingIndex % subHeadingPool.length];
+      result.push(`<h3>${sub}</h3>`);
+      subHeadingIndex++;
+      subCounter = 0;
+      nextSubheadingAt = rand(8, 12);
+    }
+  }
+
+  return result.join('');
+}
+
+// ============================================================
+// 4. GENERATE SUMMARY (TL;DR) – first sentences from intro
+// ============================================================
+function generateSummary(plainText: string): string {
+  const cleaned = plainText.replace(/\s+/g, ' ').trim();
+  const sentences = cleaned.match(/[^.!?]+[.!?]+/g) || [cleaned];
+  const count = Math.min(3, sentences.length);
+  const selected = sentences.slice(0, count).map(s => s.trim());
+  let summary = selected.join(' ');
+  if (summary.length > 0 && !summary.endsWith('.')) {
+    summary += '.';
+  }
+  return summary;
+}
+
+// ============================================================
+// 5. UNSPLASH IMAGE POOL (only for hero image, no inline images)
 // ============================================================
 const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80',
   'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80',
   'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
   'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80',
+  'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80',
+  'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',
+  'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80',
+  'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80',
+  'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80',
+  'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&q=80',
+  'https://images.unsplash.com/photo-1504639725596-34d2e8e3e5b5?w=800&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80',
+  'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80',
+  'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800&q=80',
+  'https://images.unsplash.com/photo-1552083974-186346191183?w=800&q=80',
+  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&q=80',
+  'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80',
+  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
+  'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80',
+  'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80',
 ];
 
 let unsplashImages: string[] | null = null;
@@ -147,7 +296,20 @@ async function getUnsplashImages(): Promise<string[]> {
 }
 
 // ============================================================
-// 3. GENERATE ARTICLE
+// 6. HASH FUNCTION FOR DETERMINISTIC IMAGE SELECTION
+// ============================================================
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+// ============================================================
+// 7. GENERATE ARTICLE (with coherent summary, headings, hero image)
 // ============================================================
 function generateArticle(index: number, images: string[]) {
   const categories = [
@@ -185,47 +347,69 @@ function generateArticle(index: number, images: string[]) {
   ];
   const title = titles[rand(0, titles.length - 1)];
 
-  const content = buildStory();
+  // Generate paragraphs (unshuffled for summary)
+  const paragraphs = generateParagraphs();
+
+  // Extract summary from the first 2‑3 paragraphs (coherent intro)
+  const introText = paragraphs.slice(0, 3).join(' ');
+  const summary = generateSummary(introText);
+
+  // Shuffle the rest for the main content
+  for (let i = paragraphs.length - 1; i > 0; i--) {
+    const j = rand(0, i);
+    [paragraphs[i], paragraphs[j]] = [paragraphs[j], paragraphs[i]];
+  }
+
+  // Build content with headings (no inline images)
+  const content = buildArticleContent(paragraphs);
+
   const plainText = content.replace(/<[^>]*>?/gm, '');
-  const description = plainText.slice(0, 160) + '...';
+  const description = plainText.slice(0, 180) + '...';
+
+  // Deterministic image selection using hash of the article's URL
+  const url = `https://techcurrent.com/article-${index}`;
+  const hash = hashCode(url);
+  const imageIndex = hash % images.length;
+  const image_url = images[imageIndex];
 
   const categoryTags: Record<string, string[]> = {
-    'ai': ['AI', 'Machine Learning', 'Deep Learning'],
-    'programming': ['Coding', 'Software', 'DevOps'],
-    'cybersecurity': ['Security', 'Privacy', 'Hacking'],
-    'startups': ['Entrepreneurship', 'VC', 'Innovation'],
-    'gadget-reviews': ['Reviews', 'Apple', 'Samsung'],
-    'space': ['NASA', 'SpaceX', 'Astronomy'],
-    'robotics': ['Robots', 'Automation', 'AI'],
-    'quantum': ['Quantum', 'Computing', 'Physics'],
-    'biotech': ['Biology', 'Genetics', 'Healthcare'],
-    'nigeria-tech': ['Nigeria', 'Africa', 'Innovation'],
-    'students': ['Education', 'Scholarships', 'Career'],
-    'scholarships': ['Scholarships', 'Grants', 'Funding'],
-    'internships': ['Internships', 'Jobs', 'Students'],
-    'hackathons': ['Hackathons', 'Coding', 'Events'],
-    'tools': ['Tools', 'Productivity', 'Development'],
-    'directory': ['Resources', 'Companies', 'Startups'],
-    'explainers': ['Explainers', 'Simplified', 'Education'],
-    'intelligence': ['Analysis', 'Trends', 'Forecasting'],
-    'the-current': ['Briefing', 'Daily', 'News'],
-    'africa-startups': ['Africa', 'Innovation', 'Funding'],
+    'ai': ['AI', 'Machine Learning', 'Deep Learning', 'LLM', 'NLP'],
+    'programming': ['Coding', 'Software', 'DevOps', 'Python', 'Rust'],
+    'cybersecurity': ['Security', 'Privacy', 'Hacking', 'Ransomware', 'Zero-Day'],
+    'startups': ['Entrepreneurship', 'VC', 'Innovation', 'Fintech', 'SaaS'],
+    'gadget-reviews': ['Reviews', 'Apple', 'Samsung', 'Google', 'Tech'],
+    'space': ['NASA', 'SpaceX', 'Astronomy', 'Rocket', 'Mars'],
+    'robotics': ['Robots', 'Automation', 'AI', 'Industrial', 'Mechatronics'],
+    'quantum': ['Quantum', 'Computing', 'Physics', 'Qubit', 'Superposition'],
+    'biotech': ['Biology', 'Genetics', 'Healthcare', 'CRISPR', 'Bioengineering'],
+    'nigeria-tech': ['Nigeria', 'Africa', 'Innovation', 'Lagos', 'Tech Hub'],
+    'students': ['Education', 'Scholarships', 'Career', 'Learning', 'Future'],
+    'scholarships': ['Scholarships', 'Grants', 'Funding', 'Study', 'Abroad'],
+    'internships': ['Internships', 'Jobs', 'Students', 'Experience', 'Career'],
+    'hackathons': ['Hackathons', 'Coding', 'Events', 'AI', 'Innovation'],
+    'tools': ['Tools', 'Productivity', 'Development', 'Design', 'AI'],
+    'directory': ['Resources', 'Companies', 'Startups', 'Investors', 'Mentors'],
+    'explainers': ['Explainers', 'Simplified', 'Education', 'Tech', 'Concepts'],
+    'intelligence': ['Analysis', 'Trends', 'Forecasting', 'Strategy', 'Future'],
+    'the-current': ['Briefing', 'Daily', 'News', 'AI', 'Startups'],
+    'africa-startups': ['Africa', 'Innovation', 'Funding', 'Entrepreneurship', 'Growth'],
   };
   const tags = categoryTags[category] || ['Tech', 'Innovation', 'Trending'];
 
   return {
     id: String(index),
-    url: `https://techcurrent.com/article-${index}`,
+    url,
     title,
     description,
+    summary,
     content,
-    image_url: images[(index - 1) % images.length],
+    image_url,
     source: ['Tech Current', 'Reuters', 'TechCrunch', 'Wired', 'Ars Technica'][rand(0, 4)],
     author: ['Buduka Oyagiri', 'AI Team', 'Dev Team', 'Security Team', 'Startup Editor'][rand(0, 4)],
     published_at: new Date(Date.now() - rand(0, 30) * 3600000).toISOString(),
     category,
     tags,
-    reading_time: Math.ceil(content.split(' ').length / 200) + 1,
+    reading_time: Math.ceil(plainText.split(' ').length / 200) + 3,
     is_pinned: index < 5,
     likes: rand(10, 500),
     bookmarks: rand(5, 200),
@@ -233,7 +417,7 @@ function generateArticle(index: number, images: string[]) {
 }
 
 // ============================================================
-// 4. CACHING & API ROUTE
+// 8. CACHING & API ROUTE
 // ============================================================
 let cachedArticles: any[] | null = null;
 
@@ -253,7 +437,6 @@ export async function GET(request: Request) {
 
   let articles = cachedArticles;
 
-  // Sub‑category mapping (fallback)
   const subCategoryMap: Record<string, string> = {
     'ai-tools': 'ai',
     'ai-models': 'ai',

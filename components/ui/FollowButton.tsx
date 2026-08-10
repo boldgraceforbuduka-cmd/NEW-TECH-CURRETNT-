@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { Button } from './Button';
 
@@ -18,14 +19,22 @@ export function FollowButton({ topic }: FollowButtonProps) {
       setLoading(false);
       return;
     }
-    // Fetch current preferences
-    fetch('/api/preferences')
-      .then(res => res.json())
-      .then(prefs => {
-        setIsFollowing(prefs.followed_topics?.includes(topic) || false);
+    const checkFollow = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('follows')
+          .select('topic')
+          .eq('user_id', user.id)
+          .eq('topic', topic);
+        if (error) throw error;
+        setIsFollowing((data ?? []).length > 0);
+      } catch (error) {
+        console.error('Failed to check follow:', error);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    };
+    checkFollow();
   }, [user, topic]);
 
   const toggle = async () => {
@@ -35,27 +44,40 @@ export function FollowButton({ topic }: FollowButtonProps) {
     }
     setLoading(true);
     try {
-      // Fetch current preferences
-      const res = await fetch('/api/preferences');
-      const prefs = await res.json();
-      const followed = prefs.followed_topics || [];
-      const newFollowed = isFollowing
-        ? followed.filter((t: string) => t !== topic)
-        : [...followed, topic];
+      console.log('🔍 Toggling follow for topic:', topic);
+      console.log('👤 User ID:', user.id);
 
-      const update = await fetch('/api/preferences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ followed_topics: newFollowed, followed_sources: [] }),
-      });
-      if (update.ok) {
-        setIsFollowing(!isFollowing);
-        toast.success(isFollowing ? `Unfollowed ${topic}` : `Following ${topic}`);
+      if (isFollowing) {
+        // Unfollow
+        const { data, error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('topic', topic);
+        if (error) throw error;
+        setIsFollowing(false);
+        toast.success(`Unfollowed ${topic}`);
+        console.log('✅ Unfollowed:', topic);
       } else {
-        toast.error('Failed to update preferences.');
+        // Follow
+        const { data, error } = await supabase
+          .from('follows')
+          .insert({ user_id: user.id, topic })
+          .select();
+        if (error) throw error;
+        setIsFollowing(true);
+        toast.success(`Following ${topic}`);
+        console.log('✅ Followed:', topic, data);
       }
-    } catch {
-      toast.error('An error occurred.');
+    } catch (error: any) {
+      console.error('❌ Follow toggle error:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      toast.error('Failed to update follow');
     } finally {
       setLoading(false);
     }
@@ -66,7 +88,7 @@ export function FollowButton({ topic }: FollowButtonProps) {
       variant={isFollowing ? 'outline' : 'default'}
       size="sm"
       onClick={toggle}
-      disabled={loading}
+      disabled={loading || !user}
       className="rounded-full text-xs h-7 px-3"
     >
       {loading ? '...' : isFollowing ? 'Following' : 'Follow'}

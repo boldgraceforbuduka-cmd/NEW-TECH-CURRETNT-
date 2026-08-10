@@ -2,9 +2,16 @@
 import { useState, useEffect } from 'react';
 import { Bookmark } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
-export function BookmarkButton({ articleId }: { articleId: string }) {
+interface BookmarkButtonProps {
+  articleId: string;
+  className?: string;
+}
+
+export function BookmarkButton({ articleId, className = '' }: BookmarkButtonProps) {
   const { user } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -14,14 +21,23 @@ export function BookmarkButton({ articleId }: { articleId: string }) {
       setLoading(false);
       return;
     }
-    // Check if article is bookmarked
-    fetch('/api/bookmarks')
-      .then(res => res.json())
-      .then(bookmarks => {
-        setIsBookmarked(bookmarks.includes(articleId));
+    const checkBookmark = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('bookmarks')
+          .select('article_id')
+          .eq('user_id', user.id)
+          .eq('article_id', articleId);
+        if (error) throw error;
+        setIsBookmarked((data ?? []).length > 0); // ✅ safe boolean
+      } catch (error) {
+        console.error('Failed to check bookmark:', error);
+        setIsBookmarked(false);
+      } finally {
         setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      }
+    };
+    checkBookmark();
   }, [user, articleId]);
 
   const toggle = async () => {
@@ -29,34 +45,44 @@ export function BookmarkButton({ articleId }: { articleId: string }) {
       toast.error('Please log in to bookmark articles.');
       return;
     }
-    const action = isBookmarked ? 'remove' : 'add';
     setLoading(true);
     try {
-      const res = await fetch('/api/bookmarks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ article_id: articleId, action }),
-      });
-      if (res.ok) {
-        setIsBookmarked(!isBookmarked);
-        toast.success(action === 'add' ? 'Bookmarked!' : 'Removed from bookmarks.');
+      if (isBookmarked) {
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('article_id', articleId);
+        if (error) throw error;
+        setIsBookmarked(false);
+        toast.success('Removed from bookmarks');
       } else {
-        toast.error('Failed to update bookmark.');
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({ user_id: user.id, article_id: articleId });
+        if (error) throw error;
+        setIsBookmarked(true);
+        toast.success('Bookmarked!');
       }
-    } catch {
-      toast.error('An error occurred.');
+    } catch (error: any) {
+      console.error('Bookmark toggle error:', error);
+      toast.error('Failed to update bookmark');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.85 }}
+      whileHover={{ scale: 1.1 }}
       onClick={toggle}
       disabled={loading}
-      className="text-muted-foreground hover:text-primary transition-colors"
+      className={`text-muted-foreground hover:text-primary transition-colors ${className}`}
     >
-      <Bookmark className={`h-5 w-5 ${isBookmarked ? 'fill-primary text-primary' : ''}`} />
-    </button>
+      <Bookmark
+        className={`h-4 w-4 ${isBookmarked ? 'fill-primary text-primary' : ''}`}
+      />
+    </motion.button>
   );
 }

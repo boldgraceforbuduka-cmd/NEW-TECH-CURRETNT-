@@ -1,128 +1,133 @@
 // app/api/feed/personalized/route.ts
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { Article } from "@/types/article";
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { Article } from '@/types/article';
 
 export const revalidate = 60;
 
+// Local fallback sample generator
+function getSampleArticles(category?: string): Article[] {
+  const all: Article[] = [
+    {
+      id: '1',
+      url: 'https://techcurrent.com/ai-breakthrough',
+      title: 'AI Breakthrough: New Model Achieves Human-Level Reasoning',
+      description: 'Researchers have developed a new AI model that demonstrates human-like reasoning capabilities.',
+      content: '<p>Full article content here...</p>',
+      image_url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=400&fit=crop',
+      source: 'Tech Current',
+      author: 'AI Research Team',
+      published_at: new Date().toISOString(),
+      category: 'ai',
+      tags: ['AI', 'Machine Learning'],
+      reading_time: 4,
+      is_pinned: true,
+      likes: 156,
+      bookmarks: 89,
+    },
+    // Add more sample articles here (copy from your main news route)
+  ];
+  if (category && category !== 'general') {
+    return all.filter(a => a.category === category);
+  }
+  return all;
+}
+
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const userTopics = searchParams.get('topics')?.split(',').filter(Boolean) || [];
-  const historyCategory = searchParams.get('historyCategory') || '';
-
-  let followedTopics: string[] = userTopics;
-  let followedSources: string[] = [];
-  let readCategories: string[] = historyCategory ? [historyCategory] : [];
-
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (user) {
-      const { data: prefs } = await supabase
-        .from("user_preferences")
-        .select("followed_topics, followed_sources")
-        .eq("user_id", user.id)
-        .single();
+    const { data: follows, error: followsError } = await supabase
+      .from('follows')
+      .select('topic')
+      .eq('user_id', user.id);
+    if (followsError) console.error('Failed to fetch follows:', followsError);
+    const followedTopics = follows?.map(f => f.topic) || [];
 
-      if (prefs) {
-        if (prefs.followed_topics?.length) followedTopics = Array.from(new Set([...followedTopics, ...prefs.followed_topics]));
-        if (prefs.followed_sources?.length) followedSources = prefs.followed_sources;
+    const { data: history, error: historyError } = await supabase
+      .from('reading_history')
+      .select('article_category')
+      .eq('user_id', user.id)
+      .order('read_at', { ascending: false })
+      .limit(10);
+    if (historyError) console.error('Failed to fetch reading history:', historyError);
+    const readCategories = history?.map(h => h.article_category).filter(Boolean) || [];
+
+    let query = supabase
+      .from('articles')
+      .select('*')
+      .order('published_at', { ascending: false })
+      .limit(100);
+
+    const { data: articles, error: articlesError } = await query;
+    if (articlesError) {
+      console.error('Failed to fetch articles:', articlesError);
+      const fallbackArticles = getSampleArticles('general');
+      return NextResponse.json({
+        articles: scoreAndSort(fallbackArticles, followedTopics, readCategories),
+        userPreferences: { topics: followedTopics, history: readCategories }
+      });
+    }
+
+    if (!articles || articles.length === 0) {
+      const fallbackArticles = getSampleArticles('general');
+      return NextResponse.json({
+        articles: scoreAndSort(fallbackArticles, followedTopics, readCategories),
+        userPreferences: { topics: followedTopics, history: readCategories }
+      });
+    }
+
+    const scoredArticles = scoreAndSort(articles, followedTopics, readCategories);
+    return NextResponse.json({
+      articles: scoredArticles.slice(0, 20),
+      userPreferences: {
+        topics: followedTopics,
+        history: readCategories
       }
+    });
+  } catch (error) {
+    console.error('Personalized feed error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate personalized feed' },
+      { status: 500 }
+    );
+  }
+}
 
-      const { data: history } = await supabase
-        .from("reading_history")
-        .select("article_category")
-        .eq("user_id", user.id)
-        .order("read_at", { ascending: false })
-        .limit(10);
+function scoreAndSort(
+  articles: Article[],
+  followedTopics: string[],
+  readCategories: string[]
+): (Article & { score: number; matchPercentage: string })[] {
+  return articles
+    .map((article) => {
+      let score = 50;
+      const category = (article.category || '').toLowerCase();
+      const tags = article.tags || [];
 
-      if (history) {
-        const histCats = history.map((h: any) => h.article_category).filter(Boolean);
-        readCategories = Array.from(new Set([...readCategories, ...histCats]));
+      if (followedTopics.some(t => category.includes(t.toLowerCase()))) score += 25;
+      if (tags.some(tag => followedTopics.some(t => tag.toLowerCase().includes(t.toLowerCase())))) score += 15;
+      if (readCategories.includes(category)) score += 15;
+      if (article.is_pinned) score += 10;
+      if (article.published_at) {
+        const hoursOld = (Date.now() - new Date(article.published_at).getTime()) / (1000 * 3600);
+        if (hoursOld < 6) score += 15;
+        else if (hoursOld < 24) score += 10;
+        else if (hoursOld < 72) score += 5;
       }
-    }
-  } catch {
-    // Fallback to query params if Supabase auth or DB is unconfigured
-  }
-
-  // Fetch articles from internal news endpoint
-  let articles: Article[] = [];
-  try {
-    const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
-    const newsRes = await fetch(`${origin}/api/news?limit=50`);
-    if (newsRes.ok) {
-      const newsData = await newsRes.json();
-      articles = newsData.articles || newsData || [];
-    }
-  } catch (e) {
-    console.error('Failed to fetch base news for personalization:', e);
-  }
-
-  // Default fallback topics if none selected
-  if (followedTopics.length === 0) {
-    followedTopics = ['ai', 'startups', 'programming', 'cybersecurity'];
-  }
-
-  // Scoring algorithm
-  const scored = articles.map((article: Article) => {
-    let score = 50; // base score
-
-    const category = (article.category || '').toLowerCase();
-    const tags = article.tags || [];
-
-    // Boost if article category is in followed topics (+25)
-    if (followedTopics.some(t => category.includes(t.toLowerCase()))) {
-      score += 25;
-    }
-
-    // Boost if article tags match followed topics (+15)
-    if (tags.some(tag => followedTopics.some(t => tag.toLowerCase().includes(t.toLowerCase())))) {
-      score += 15;
-    }
-
-    // Boost if article source is in followed sources (+10)
-    if (followedSources.includes(article.source || '')) {
-      score += 10;
-    }
-
-    // Boost if user read articles in this category before (+15)
-    if (readCategories.includes(category)) {
-      score += 15;
-    }
-
-    // Editor's pick / pinned boost (+10)
-    if (article.is_pinned) {
-      score += 10;
-    }
-
-    // Recency boost (up to +15)
-    if (article.published_at) {
-      const hoursOld = (Date.now() - new Date(article.published_at).getTime()) / (1000 * 3600);
-      if (hoursOld < 6) score += 15;
-      else if (hoursOld < 24) score += 10;
-      else if (hoursOld < 72) score += 5;
-    }
-
-    // Cap score percentage at 99%
-    const matchPercentage = Math.min(99, Math.max(60, score));
-
-    return {
-      ...article,
-      score: matchPercentage,
-      matchPercentage: `${matchPercentage}% Match`,
-    };
-  });
-
-  // Sort by score (descending) then by publish date
-  scored.sort((a, b) => (b.score - a.score) || (new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime()));
-
-  return NextResponse.json({
-    articles: scored,
-    userPreferences: {
-      topics: followedTopics,
-      sources: followedSources,
-      historyCategories: readCategories,
-    }
-  });
+      const cappedScore = Math.min(99, Math.max(60, score));
+      return {
+        ...article,
+        score: cappedScore,
+        matchPercentage: `${cappedScore}% Match`,
+      };
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(b.published_at || 0).getTime() - new Date(a.published_at || 0).getTime();
+    });
 }

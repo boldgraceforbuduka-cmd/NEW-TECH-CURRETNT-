@@ -1,89 +1,91 @@
+// app/(public)/my-feed/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase/client';
 import { ArticleGrid } from '@/components/ui/ArticleGrid';
+import { fetchArticles } from '@/lib/api/client';
 import { Article } from '@/types/article';
-import { Sparkles, SlidersHorizontal, Check } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/Button'; // ✅ import Button
 
 export default function MyFeedPage() {
+  const { user, loading: authLoading } = useAuth();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTopics, setActiveTopics] = useState<string[]>([]);
-  const [selectedTopic, setSelectedTopic] = useState<string>('all');
+  const [followedTopics, setFollowedTopics] = useState<string[]>([]);
 
   useEffect(() => {
-    async function loadPersonalizedFeed() {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchFollows = async () => {
+      const { data } = await supabase
+        .from('follows')
+        .select('topic')
+        .eq('user_id', user.id);
+      const topics = data?.map(f => f.topic) || [];
+      setFollowedTopics(topics);
+    };
+
+    const fetchFeed = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('/api/feed/personalized');
-        if (res.ok) {
-          const data = await res.json();
-          setArticles(data.articles || []);
-          setActiveTopics(data.userPreferences?.topics || []);
-        } else {
-          setArticles([]);
+        let data = await fetchArticles({ category: 'general', limit: 30 });
+        if (followedTopics.length > 0) {
+          data = data.filter(article =>
+            followedTopics.includes(article.category || '')
+          );
         }
-      } catch {
+        setArticles(data);
+      } catch (error) {
+        console.error('Failed to load feed:', error);
         setArticles([]);
       } finally {
         setLoading(false);
       }
-    }
-    loadPersonalizedFeed();
-  }, []);
+    };
 
-  const filteredArticles = selectedTopic === 'all'
-    ? articles
-    : articles.filter(a => a.category?.toLowerCase().includes(selectedTopic.toLowerCase()));
+    fetchFollows().then(() => fetchFeed());
+  }, [user, followedTopics]); // ✅ added followedTopics to dependency array
+
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-4 py-20">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center">
+        <h1 className="text-2xl font-heading font-bold mb-4">Sign in to see your feed</h1>
+        <p className="text-muted-foreground mb-6">Follow topics to get personalised articles.</p>
+        <Link href="/login">
+          <Button>Sign In</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <Sparkles className="h-8 w-8 text-gold" />
-            <h1 className="text-4xl font-heading font-bold">For You Feed</h1>
-          </div>
-          <p className="text-muted-foreground mt-1">
-            Articles scored and ranked based on your reading history and preferences
+      <div className="flex items-center gap-3 mb-6">
+        <Sparkles className="h-8 w-8 text-gold" />
+        <h1 className="text-4xl font-heading font-bold">My Feed</h1>
+      </div>
+      {followedTopics.length === 0 && (
+        <div className="bg-muted/30 border border-border rounded-xl p-6 mb-8">
+          <p className="text-sm text-muted-foreground">
+            You aren't following any topics yet. Follow topics like "AI" or "Startups" to get personalised articles.
           </p>
         </div>
-      </div>
-
-      {/* Topics / Preferences Filter Bar */}
-      {activeTopics.length > 0 && (
-        <div className="mb-8 p-4 bg-card border border-border rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground uppercase mr-1 flex items-center gap-1">
-              <SlidersHorizontal className="h-3.5 w-3.5" /> Scored for:
-            </span>
-            <button
-              onClick={() => setSelectedTopic('all')}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                selectedTopic === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              All Topics
-            </button>
-            {activeTopics.map((topic) => (
-              <button
-                key={topic}
-                onClick={() => setSelectedTopic(topic)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all uppercase ${
-                  selectedTopic === topic ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {topic}
-              </button>
-            ))}
-          </div>
-
-          <span className="text-xs text-muted-foreground">
-            Personalization Engine Active
-          </span>
-        </div>
       )}
-
-      <ArticleGrid articles={filteredArticles} loading={loading} />
+      <ArticleGrid articles={articles} loading={loading} />
     </div>
   );
 }

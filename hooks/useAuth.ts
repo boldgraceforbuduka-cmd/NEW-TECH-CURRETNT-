@@ -1,6 +1,6 @@
 // hooks/useAuth.ts
-import { supabase } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 
 export function useAuth() {
@@ -21,5 +21,5 @@ export function useAuth() {
     return () => listener?.subscription.unsubscribe();
   }, []);
 
-  return { user, loading };
+  return { user, loading, isAuthenticated: !!user };
 }

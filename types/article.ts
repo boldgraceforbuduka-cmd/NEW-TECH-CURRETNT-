@@ -4,6 +4,7 @@ export interface Article {
   url?: string;
   title: string;
   description?: string;
+  summary?: string; // ✅ NEW – TL;DR summary
   content?: string;
   image_url?: string;
   source?: string;
@@ -13,7 +14,7 @@ export interface Article {
   tags?: string[];
   reading_time?: number;
   is_pinned?: boolean;
-  is_editor_pick?: boolean; // ✅ new
+  is_editor_pick?: boolean;
   likes?: number;
   bookmarks?: number;
   slug?: string;

@@ -4,24 +4,11 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import Image from 'next/image';
 import { Heart, Bookmark, Share2, ArrowLeft, Calendar, Clock, User } from 'lucide-react';
 import { fetchArticles } from '@/lib/api/client';
 import { Article } from '@/types/article';
-
-// Helper function to generate slug from URL
-function generateSlugFromUrl(url: string): string {
-  const parts = url.split('/');
-  const lastPart = parts[parts.length - 1];
-  return lastPart.split('?')[0];
-}
-
-// Helper function to generate slug from title (fallback)
-function generateSlugFromTitle(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+import { generateSlug, generateSlugFromUrl } from '@/lib/utils'; // ✅ import shared helpers
 
 export default function ArticlePage() {
   const params = useParams();
@@ -33,19 +20,19 @@ export default function ArticlePage() {
       try {
         const slug = params.slug as string;
         console.log('🔍 Looking for slug:', slug);
-        
+
         const articles = await fetchArticles({ limit: 100 }) as Article[];
         console.log('📰 Total articles:', articles.length);
-        
+
         // Log all articles with their slugs
         const articleSlugs = articles.map((a) => ({
           title: a.title,
           url: a.url,
           slugFromUrl: a.url ? generateSlugFromUrl(a.url) : null,
-          slugFromTitle: generateSlugFromTitle(a.title),
+          slugFromTitle: generateSlug(a.title), // ✅ use shared generateSlug
         }));
         console.log('📋 All article slugs:', articleSlugs);
-        
+
         // Find article by matching slug from URL first, then title
         const found = articles.find((a) => {
           // Try URL-based slug first
@@ -57,14 +44,14 @@ export default function ArticlePage() {
             }
           }
           // Fallback to title-based slug
-          const titleSlug = generateSlugFromTitle(a.title);
+          const titleSlug = generateSlug(a.title);
           if (titleSlug === slug) {
             console.log('✅ MATCH FOUND (Title):', a.title);
             return true;
           }
           return false;
         });
-        
+
         console.log('🏆 Final result:', found ? found.title : 'Not found');
         setArticle(found || null);
       } catch (error) {
@@ -158,20 +145,22 @@ export default function ArticlePage() {
       </div>
 
       {article.image_url && (
-        <div className="mb-8 rounded-2xl overflow-hidden">
-          <img
+        <div className="mb-8 rounded-2xl overflow-hidden relative w-full h-[300px] md:h-[500px]">
+          <Image
             src={article.image_url}
             alt={article.title}
-            className="w-full h-auto max-h-[500px] object-cover"
+            fill
+            unoptimized
+            className="object-cover"
           />
         </div>
       )}
 
-      <div 
+      <div
         className="prose prose-invert max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-strong:text-foreground prose-a:text-primary prose-li:text-muted-foreground"
-        dangerouslySetInnerHTML={{ 
-          __html: article.content || article.description || '<p>Full article content coming soon...</p>' 
-        }} 
+        dangerouslySetInnerHTML={{
+          __html: article.content || article.description || '<p>Full article content coming soon...</p>'
+        }}
       />
 
       {article.tags && article.tags.length > 0 && (

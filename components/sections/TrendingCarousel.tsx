@@ -1,15 +1,24 @@
+// components/sections/TrendingCarousel.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
 import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ArticleCard } from '@/components/ui/ArticleCard';
-
 import { Article } from '@/types/article';
 
-export function TrendingCarousel({ articles }: { articles: Article[] }) {
+interface TrendingCarouselProps {
+  articles: Article[];
+}
+
+export function TrendingCarousel({ articles }: TrendingCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [itemsPerView, setItemsPerView] = useState(3);
+  const [ref, inView] = useInView({
+    triggerOnce: true,
+    threshold: 0.1,
+  });
 
   useEffect(() => {
     const updateItemsPerView = () => {
@@ -29,11 +38,17 @@ export function TrendingCarousel({ articles }: { articles: Article[] }) {
   if (!total) return null;
 
   return (
-    <section className="container mx-auto px-4 py-16">
+    <motion.section
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 40 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+      className="container mx-auto px-4 py-12"
+    >
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <TrendingUp className="h-6 w-6 text-primary" />
-          <h2 className="text-3xl font-heading font-bold">Trending Now</h2>
+          <TrendingUp className="h-6 w-6 text-gold" />
+          <h2 className="text-2xl font-heading font-bold">Trending Now</h2>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -56,6 +71,7 @@ export function TrendingCarousel({ articles }: { articles: Article[] }) {
           </Button>
         </div>
       </div>
+
       <div className="overflow-hidden">
         <motion.div
           className="flex gap-4"
@@ -63,17 +79,17 @@ export function TrendingCarousel({ articles }: { articles: Article[] }) {
           transition={{ duration: 0.5 }}
           style={{ width: `${(total / itemsPerView) * 100}%` }}
         >
-          {articles.map((article: Article) => (
+          {articles.map((article) => (
             <div
               key={article.url}
               className="flex-shrink-0"
               style={{ width: `${100 / itemsPerView}%` }}
             >
-              <ArticleCard article={article} />
+              <ArticleCard article={article} variant="trending" />
             </div>
           ))}
         </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }
