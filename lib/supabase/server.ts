@@ -19,7 +19,7 @@ export const createClient = () => {
               cookieStore.set(name, value, options);
             });
           } catch {
-            // Ignore errors in Server Components
+            // ignore
           }
         },
       },
