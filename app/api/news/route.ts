@@ -113,8 +113,7 @@ const allParagraphs = [
 // 2. GENERATE UNIQUE PARAGRAPHS (UNSHUFFLED)
 // ============================================================
 function generateParagraphs(): string[] {
-  const count = rand(80, 120);
-  const usedIndices = new Set<number>();
+  const count = 50;
   const selected: string[] = [];
 
   const categories = [openings, backgrounds, analyses, impacts, conclusions];
@@ -125,17 +124,8 @@ function generateParagraphs(): string[] {
     }
   }
 
-  while (selected.length < count) {
-    let idx;
-    do {
-      idx = rand(0, allParagraphs.length - 1);
-    } while (usedIndices.has(idx));
-    usedIndices.add(idx);
-    selected.push(allParagraphs[idx]);
-  }
-
   // ⚠️ DO NOT SHUFFLE HERE – we need the first paragraphs for the summary.
-  return selected;
+  return selected.slice(0, count);
 }
 
 // ============================================================

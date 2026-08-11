@@ -7,6 +7,7 @@ import { TrendingCarousel } from '@/components/sections/TrendingCarousel';
 import { CategorySection } from '@/components/sections/CategorySection';
 import { NewsletterSignup } from '@/components/sections/NewsletterSignup';
 import { ArticleGrid } from '@/components/ui/ArticleGrid';
+import { BottomNav } from '@/components/ui/BottomNav';
 import { fetchArticles } from '@/lib/api/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
@@ -139,6 +140,7 @@ export default function HomePage() {
         )}
       </div>
       <NewsletterSignup />
+      <BottomNav />
     </main>
   );
 }
