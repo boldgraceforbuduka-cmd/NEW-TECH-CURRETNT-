@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArticleGrid } from '@/components/ui/ArticleGrid';
 import { fetchArticles } from '@/lib/api/client';
 import { Input } from '@/components/ui/Input';
@@ -11,6 +11,9 @@ import { Article } from '@/types/article';
 const categories = [
   { label: 'All', value: 'general' },
   { label: 'AI', value: 'ai' },
+  { label: 'Gadgets', value: 'gadgets' },
+  { label: 'Science', value: 'science' },
+  { label: 'Africa', value: 'africa' },
   { label: 'Programming', value: 'programming' },
   { label: 'Cybersecurity', value: 'cybersecurity' },
   { label: 'Startups', value: 'startups' },
@@ -18,7 +21,9 @@ const categories = [
 
 function NewsContent() {
   const searchParams = useSearchParams();
-  const [category, setCategory] = useState(searchParams?.get('category') || 'general');
+  const router = useRouter();
+  const queryCategory = searchParams?.get('category') || 'general';
+  const [category, setCategory] = useState(queryCategory);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -43,9 +48,15 @@ function NewsContent() {
   }, [category]);
 
   useEffect(() => {
+    if (queryCategory !== category) {
+      setCategory(queryCategory);
+    }
+  }, [queryCategory, category]);
+
+  useEffect(() => {
     setPage(1);
     loadArticles(1, true);
-  }, [loadArticles]);
+  }, [loadArticles, category]);
 
   const filtered = articles.filter((a) =>
     a.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,7 +89,9 @@ function NewsContent() {
             key={cat.value}
             variant={category === cat.value ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setCategory(cat.value)}
+            onClick={() => {
+              router.push(`/news?category=${encodeURIComponent(cat.value)}`);
+            }}
             className="rounded-full"
           >
             {cat.label}

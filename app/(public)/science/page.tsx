@@ -1,8 +1,7 @@
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 export default function SciencePage() {
-  return (
-    <div className="container mx-auto p-6">
+  redirect('/news?category=science');
       <h1 className="text-3xl font-bold mb-6">Science</h1>
       <ul className="space-y-2">
         <li><Link href="/science/biotech" className="text-blue-600 hover:underline">Biotech</Link></li>

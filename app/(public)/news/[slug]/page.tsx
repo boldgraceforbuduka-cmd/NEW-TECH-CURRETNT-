@@ -8,7 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, Share2, ArrowLeft, Calendar, Clock, User, Volume2, Pause, Square } from 'lucide-react';
-import { fetchArticles } from '@/lib/api/client';
+import { APP_URL, fetchArticles } from '@/lib/api/client';
 import { Article } from '@/types/article';
 import { BookmarkButton } from '@/components/ui/BookmarkButton';
 import { Button } from '@/components/ui/Button';
@@ -156,7 +156,7 @@ export default function ArticlePage() {
         },
         mainEntityOfPage: {
           '@type': 'WebPage',
-          '@id': typeof window !== 'undefined' ? window.location.href : '',
+          '@id': `${APP_URL}/news/${generateSlugFromTitle(article.title)}`,
         },
       }
     : null;
@@ -190,7 +190,7 @@ export default function ArticlePage() {
     );
   }
 
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/news/${generateSlugFromTitle(article.title)}`;
+  const shareUrl = `${APP_URL}/news/${generateSlugFromTitle(article.title)}`;
 
   return (
     <>

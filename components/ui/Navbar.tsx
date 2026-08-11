@@ -67,7 +67,7 @@ const navItems = [
   },
   {
     label: 'Gadgets',
-    href: '/gadgets',
+    href: '/news?category=gadgets',
     icon: Smartphone,
     dropdown: [
       { label: 'Reviews', href: '/gadgets/reviews' },
@@ -77,7 +77,7 @@ const navItems = [
   },
   {
     label: 'Science',
-    href: '/science',
+    href: '/news?category=science',
     icon: FlaskConical,
     dropdown: [
       { label: 'Space', href: '/science/space' },
@@ -88,7 +88,7 @@ const navItems = [
   },
   {
     label: 'Africa',
-    href: '/africa',
+    href: '/news?category=africa',
     icon: Globe,
     dropdown: [
       { label: 'Nigerian Tech', href: '/africa/nigeria' },

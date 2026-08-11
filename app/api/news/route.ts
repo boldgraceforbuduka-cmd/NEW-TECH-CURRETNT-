@@ -437,6 +437,18 @@ export async function GET(request: Request) {
 
   let articles = cachedArticles;
 
+  const categoryGroups: Record<string, string[]> = {
+    ai: ['ai', 'ai-tools', 'ai-models', 'ai-research', 'ai-explained'],
+    gadgets: ['gadget-reviews', 'gadget-comparisons', 'wearables'],
+    science: ['space', 'robotics', 'quantum', 'biotech'],
+    africa: ['nigeria-tech', 'africa-startups', 'africa-innovation', 'africa-founders', 'campus-innovation'],
+    startups: ['startups', 'startup-funding', 'founder-stories', 'african-startups'],
+    cybersecurity: ['cybersecurity', 'security-guides'],
+    students: ['students', 'scholarships', 'internships', 'hackathons'],
+    business: ['business-tech'],
+    general: ['general'],
+  };
+
   const subCategoryMap: Record<string, string> = {
     'ai-tools': 'ai',
     'ai-models': 'ai',
@@ -465,14 +477,21 @@ export async function GET(request: Request) {
   };
 
   if (category && category !== 'general' && category !== 'all') {
-    const parent = subCategoryMap[category];
-    let filtered = articles.filter(a => a.category === category);
-    if (filtered.length < 10 && parent) {
-      const parentArticles = articles.filter(a => a.category === parent);
-      filtered = [...filtered, ...parentArticles];
-    }
-    if (filtered.length > 0) {
-      articles = filtered;
+    const group = categoryGroups[category];
+    if (group) {
+      const filteredArticles = articles.filter((a) => group.includes(a.category));
+      if (filteredArticles.length > 0) {
+        articles = filteredArticles;
+      }
+    } else {
+      const filtered = articles.filter((a) => a.category === category);
+      const parent = subCategoryMap[category];
+      if (parent) {
+        const parentArticles = articles.filter((a) => a.category === parent);
+        articles = [...filtered, ...parentArticles];
+      } else if (filtered.length > 0) {
+        articles = filtered;
+      }
     }
   }
 
