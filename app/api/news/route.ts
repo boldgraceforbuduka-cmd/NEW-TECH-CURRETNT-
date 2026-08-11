@@ -227,8 +227,17 @@ function generateSummary(plainText: string): string {
 }
 
 // ============================================================
-// 5. UNSPLASH IMAGE POOL (only for hero image, no inline images)
+// 5. IMAGE URL GENERATION
 // ============================================================
+// Use stable Picsum URLs to generate a unique image for every article.
+// The seed is based on the article index plus a fixed salt, ensuring the same
+// article always returns the same image while avoiding the 30-image cycle.
+function getArticleImageUrl(index: number): string {
+  const seed = index + 5000;
+  return `https://picsum.photos/seed/${seed}/800/400`;
+}
+
+// Keep fallback images for display or error handling in the UI when needed.
 const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80',
   'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80',
@@ -246,62 +255,12 @@ const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800&q=80',
   'https://images.unsplash.com/photo-1552083974-186346191183?w=800&q=80',
   'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&q=80',
-  'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80',
-  'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80',
-  'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80',
-  'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80',
 ];
-
-let unsplashImages: string[] | null = null;
-
-async function getUnsplashImages(): Promise<string[]> {
-  if (unsplashImages && unsplashImages.length > 0) return unsplashImages;
-
-  const accessKey = process.env.UNSPLASH_ACCESS_KEY;
-  if (!accessKey) {
-    console.warn('UNSPLASH_ACCESS_KEY is missing. Using fallback images.');
-    return FALLBACK_IMAGES;
-  }
-
-  try {
-    const response = await fetch(
-      'https://api.unsplash.com/search/photos?query=technology&per_page=30&orientation=landscape',
-      {
-        headers: { Authorization: `Client-ID ${accessKey}` },
-        next: { revalidate: 3600 },
-      }
-    );
-    if (!response.ok) throw new Error(`Unsplash API returned ${response.status}`);
-    const data = await response.json();
-    const images = data.results?.map((photo: any) => photo?.urls?.regular).filter(Boolean);
-    if (images?.length) {
-      unsplashImages = images;
-      return images;
-    }
-    return FALLBACK_IMAGES;
-  } catch (error) {
-    console.error('Unsplash image fetch failed:', error);
-    return FALLBACK_IMAGES;
-  }
-}
-
-// ============================================================
-// 6. HASH FUNCTION FOR DETERMINISTIC IMAGE SELECTION
-// ============================================================
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
-}
 
 // ============================================================
 // 7. GENERATE ARTICLE (with coherent summary, headings, hero image)
 // ============================================================
-function generateArticle(index: number, images: string[]) {
+function generateArticle(index: number) {
   const categories = [
     'ai', 'programming', 'cybersecurity', 'startups', 'general',
     'breaking', 'latest', 'trending', 'ai-tools', 'ai-models', 'ai-research', 'ai-explained',
@@ -356,11 +315,8 @@ function generateArticle(index: number, images: string[]) {
   const plainText = content.replace(/<[^>]*>?/gm, '');
   const description = plainText.slice(0, 180) + '...';
 
-  // Deterministic image selection using hash of the article's URL
   const url = `https://techcurrent.com/article-${index}`;
-  const hash = hashCode(url);
-  const imageIndex = hash % images.length;
-  const image_url = images[imageIndex];
+  const image_url = getArticleImageUrl(index);
 
   const categoryTags: Record<string, string[]> = {
     'ai': ['AI', 'Machine Learning', 'Deep Learning', 'LLM', 'NLP'],
@@ -419,9 +375,8 @@ export async function GET(request: Request) {
 
   if (!cachedArticles) {
     cachedArticles = [];
-    const images = await getUnsplashImages();
     for (let i = 1; i <= 5000; i++) {
-      cachedArticles.push(generateArticle(i, images));
+      cachedArticles.push(generateArticle(i));
     }
   }
 
